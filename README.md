@@ -1,4 +1,4 @@
-![Pacer logo](https://raw.githubusercontent.com/jjnrmason/Pacer/main/docs/logo.png)
+![Pacer logo](https://raw.githubusercontent.com/WeekTwenty/Pacer/main/docs/logo.png)
 
 # Pacer
 
