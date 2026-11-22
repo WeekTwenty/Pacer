@@ -50,6 +50,7 @@ public sealed class ScenarioRunner
         {
             logger.LogInformation("Running setup for '{Scenario}'.", scenario.Name);
             scenarioData = await scenario.Setup(setupContext, cancellationToken).ConfigureAwait(false);
+            setupContext.ScenarioData = scenarioData;
         }
 
         try
@@ -91,6 +92,9 @@ public sealed class ScenarioRunner
         await RunPhaseAsync(scenario, scenarioData, logger, scenario.Load, recorder, intervals, cancellationToken, journeyCollector).ConfigureAwait(false);
 
         var window = scenario.Load.TotalDuration;
+        var stepStats = scenario.Steps.Select(s => collectors[s.Name].Snapshot(window)).ToArray();
+        var journeyStats = journeyCollector.Snapshot(window);
+
         return new RunReport
         {
             ScenarioName = scenario.Name,
@@ -99,8 +103,8 @@ public sealed class ScenarioRunner
             PeakUsers = scenario.Load.PeakUsers,
             StartedAt = startedAt,
             Duration = window,
-            Steps = [.. scenario.Steps.Select(s => collectors[s.Name].Snapshot(window))],
-            Journey = journeyCollector.Snapshot(window),
+            Steps = stepStats,
+            Journey = journeyStats,
             Intervals = intervals,
             Environment = EnvironmentInfo.Capture(),
         };
@@ -192,6 +196,11 @@ public sealed class ScenarioRunner
             {
                 break;
             }
+
+            // A journey cut short because the user was stopped (end of run, or ramp-down) didn't fail;
+            // it just didn't finish. Leave it out of the journey stats rather than counting it as a failure.
+            if (outcome.WasCancelled)
+                break;
 
             journeyCollector?.Record(outcome.Elapsed, outcome.IsOk, outcome.BytesSent, outcome.BytesReceived);
         }

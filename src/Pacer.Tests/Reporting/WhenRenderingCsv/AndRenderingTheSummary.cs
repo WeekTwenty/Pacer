@@ -12,7 +12,7 @@ public partial class WhenRenderingCsv
             var csv = CsvReportWriter.RenderSummary([ReportFixtures.Report()]);
 
             var firstLine = csv.Split('\n')[0].Trim();
-            Assert.That(firstLine, Is.EqualTo("scenario,row,ok,fail,total,rps,min_ms,mean_ms,p50_ms,p75_ms,p95_ms,p99_ms,p999_ms,max_ms,bytes_sent,bytes_received"));
+            Assert.That(firstLine, Is.EqualTo("scenario,row,ok,fail,total,rps,min_us,mean_us,p50_us,p75_us,p95_us,p99_us,p999_us,max_us,bytes_sent,bytes_received"));
         }
 
         [Test]
@@ -42,11 +42,12 @@ public partial class WhenRenderingCsv
         }
 
         [Test]
-        public void ThenItFormatsLatencyWithInvariantDecimalPoints()
+        public void ThenItWritesLatencyAsWholeMicroseconds()
         {
             var csv = CsvReportWriter.RenderSummary([ReportFixtures.Report()]);
 
-            Assert.That(csv, Does.Contain("5.25"));
+            // MeanMs 5.25 → 5250 µs; MinMs 1.0 → 1000 µs.
+            Assert.That(csv, Does.Contain("5250").And.Contain("1000"));
         }
     }
 }

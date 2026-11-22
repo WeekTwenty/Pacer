@@ -1,4 +1,3 @@
-using Pacer.Load;
 using Pacer.Scenarios;
 using Pacer.Steps;
 
@@ -17,8 +16,7 @@ public class ScenarioRegistryTestBase
     protected static ScenarioDefinition Definition(string name, string? group = null)
     {
         var builder = Scenario.Create(name)
-            .AddStep("step", (_, _) => ValueTask.FromResult(StepResult.Ok()))
-            .WithLoad(LoadProfiles.Load(1, TimeSpan.FromSeconds(1)));
+            .AddStep("step", (_, _) => ValueTask.FromResult(StepResult.Ok()));
         if (group is not null)
         {
             builder.InGroup(group);

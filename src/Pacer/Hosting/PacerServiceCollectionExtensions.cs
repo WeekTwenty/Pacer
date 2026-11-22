@@ -2,6 +2,7 @@ using System.Diagnostics.Metrics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Pacer.Engine;
+using Pacer.History;
 using Pacer.Metrics;
 using Pacer.Reporting;
 using Pacer.Scenarios;
@@ -13,7 +14,8 @@ public static class PacerServiceCollectionExtensions
 {
     /// <summary>
     /// Adds the Pacer engine, metrics, scenario registry, and the console/CSV/HTML report writers to
-    /// the service collection. Returns a <see cref="PacerBuilder"/> for registering scenarios and
+    /// the service collection, and binds <see cref="PacerSettings"/> from the <c>Pacer</c>
+    /// configuration section. Returns a <see cref="PacerBuilder"/> for registering scenarios and
     /// setup classes.
     /// </summary>
     /// <example>
@@ -27,10 +29,14 @@ public static class PacerServiceCollectionExtensions
     {
         ArgumentNullException.ThrowIfNull(services);
 
+        services.AddOptions<PacerSettings>().BindConfiguration(PacerSettings.SectionName);
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddSingleton(sp => new PacerMeter(sp.GetService<IMeterFactory>()));
         services.TryAddSingleton<ScenarioRunner>();
         services.TryAddSingleton<TestRunner>();
+
+        services.TryAddSingleton<IHistoryStore, JsonHistoryStore>();
+        services.TryAddSingleton<IBaselineStore, JsonBaselineStore>();
 
         var registry = new ScenarioRegistry();
         services.TryAddSingleton(registry);
@@ -93,6 +99,20 @@ public sealed class PacerBuilder
     {
         ArgumentNullException.ThrowIfNull(writer);
         Services.AddSingleton(writer);
+        return this;
+    }
+
+    /// <summary>Replaces the default <see cref="IHistoryStore"/> (JSON files) with a custom backend.</summary>
+    public PacerBuilder UseHistoryStore<THistoryStore>() where THistoryStore : class, IHistoryStore
+    {
+        Services.Replace(ServiceDescriptor.Singleton<IHistoryStore, THistoryStore>());
+        return this;
+    }
+
+    /// <summary>Replaces the default <see cref="IBaselineStore"/> (JSON files) with a custom backend.</summary>
+    public PacerBuilder UseBaselineStore<TBaselineStore>() where TBaselineStore : class, IBaselineStore
+    {
+        Services.Replace(ServiceDescriptor.Singleton<IBaselineStore, TBaselineStore>());
         return this;
     }
 }

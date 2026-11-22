@@ -4,46 +4,46 @@ using Pacer.Scenarios;
 namespace Pacer.Hosting;
 
 /// <summary>
-/// Applies command-line <see cref="RunOptions"/> overrides to a scenario, rebuilding its load
-/// profile (and warm-up) from the requested shape, user count, and duration.
+/// Decides what load each scenario runs with. Scenarios don't declare a load profile in code; it is
+/// resolved from layers, each overriding the one before:
+/// <list type="number">
+/// <item>Pacer's built-in default (10 constant users for one minute).</item>
+/// <item>The <c>Pacer:Load</c> configuration section.</item>
+/// <item>The <c>run</c> command's <c>--profile</c>, <c>--users</c>, <c>--duration</c> and <c>--warmup</c> flags.</item>
+/// </list>
+/// Warm-up falls back to the scenario's <see cref="Scenario.WithWarmup"/> value when no layer sets it.
 /// </summary>
 public static class RunPlanner
 {
-    /// <summary>Returns the scenario unchanged, or a copy with overrides applied.</summary>
-    public static ScenarioDefinition Apply(ScenarioDefinition scenario, RunOptions options)
+    /// <summary>Returns a copy of <paramref name="scenario"/> with its resolved load profile and warm-up.</summary>
+    /// <exception cref="LoadConfigurationException">The resolved configuration is invalid.</exception>
+    public static ScenarioDefinition Apply(ScenarioDefinition scenario, RunOptions options, PacerSettings? settings = null)
     {
         ArgumentNullException.ThrowIfNull(scenario);
         ArgumentNullException.ThrowIfNull(options);
 
-        var result = scenario;
-        if (options.OverridesLoad)
-            result = result.WithLoad(BuildProfile(options, scenario.Load));
-        if (options.Warmup is { } warmup)
-            result = result.WithWarmup(warmup);
-        return result;
+        try
+        {
+            var plan = Resolve(options, settings);
+            var result = scenario.WithLoad(plan.Build());
+            return plan.Warmup is { } warmup ? result.WithWarmup(warmup) : result;
+        }
+        catch (Exception ex) when (ex is ArgumentException or FormatException)
+        {
+            throw new LoadConfigurationException(scenario.Name, ex);
+        }
     }
 
-    /// <summary>
-    /// Builds a load profile from the overrides, defaulting the user count and duration to the
-    /// existing profile's peak and total when not specified, and the shape to "load".
-    /// </summary>
-    public static LoadProfile BuildProfile(RunOptions options, LoadProfile fallback)
+    internal static LoadPlan Resolve(RunOptions options, PacerSettings? settings)
     {
-        ArgumentNullException.ThrowIfNull(options);
-        ArgumentNullException.ThrowIfNull(fallback);
-
-        var users = options.Users ?? fallback.PeakUsers;
-        var duration = options.Duration ?? fallback.TotalDuration;
-        var shape = (options.Profile ?? "load").ToLowerInvariant();
-
-        return shape switch
-        {
-            "load" => LoadProfiles.Load(users, duration),
-            "soak" => LoadProfiles.Soak(users, duration),
-            "spike" => LoadProfiles.Spike(Math.Max(1, users / 4), users, duration / 5, duration),
-            "stress" => LoadProfiles.Stress(Math.Max(1, users / 5), users, Math.Max(1, users / 5), duration / 5),
-            "ramp" => LoadProfiles.Ramp(users, duration / 3, duration / 3, duration - 2 * (duration / 3)),
-            _ => throw new ArgumentException($"Unknown load profile '{options.Profile}'. Valid values: load, soak, spike, stress, ramp.", nameof(options)),
-        };
+        return LoadPlan.Defaults
+            .Overlay(LoadPlan.From(settings?.Load))
+            .Overlay(new LoadPlan
+            {
+                Profile = options.Profile,
+                Users = options.Users,
+                Duration = options.Duration,
+                Warmup = options.Warmup,
+            });
     }
 }

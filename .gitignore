@@ -12,6 +12,7 @@
 *.env
 .idea
 reports/
+.pacer/
 .DS_Store
 
 # User-specific files (MonoDevelop/Xamarin Studio)

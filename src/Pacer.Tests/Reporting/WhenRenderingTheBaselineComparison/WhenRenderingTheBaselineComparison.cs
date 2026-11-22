@@ -1,0 +1,4 @@
+namespace Pacer.Tests.Reporting.WhenRenderingTheBaselineComparison;
+
+[TestFixture]
+public partial class WhenRenderingTheBaselineComparison;

@@ -7,7 +7,22 @@ internal static class ReportFormatting
 {
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 
+    /// <summary>Latencies below this threshold (in milliseconds) are rendered in microseconds for higher precision.</summary>
+    private const double MicrosecondThresholdMs = 5.0;
+
     public static string Ms(double value) => value.ToString("F2", Invariant);
+
+    /// <summary>Converts a millisecond latency to whole microseconds (rounding to nearest).</summary>
+    public static long Microseconds(double ms) => (long)Math.Round(ms * 1000d, MidpointRounding.AwayFromZero);
+
+    /// <summary>
+    /// Formats a latency with an explicit unit, switching from milliseconds to microseconds when the
+    /// value is below <see cref="MicrosecondThresholdMs"/> ms, e.g. "12.34 ms" or "2345 µs".
+    /// </summary>
+    public static string Latency(double ms)
+        => ms < MicrosecondThresholdMs
+            ? $"{Microseconds(ms)} µs"
+            : $"{Ms(ms)} ms";
 
     public static string Rps(double value) => value.ToString("F1", Invariant);
 

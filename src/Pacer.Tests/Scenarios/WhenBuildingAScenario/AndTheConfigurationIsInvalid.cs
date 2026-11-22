@@ -9,15 +9,7 @@ public partial class WhenBuildingAScenario
         [Test]
         public void ThenItThrowsWhenNoStepsAreDefined()
         {
-            var scenario = Scenario.Create("empty").WithLoad(AnyLoad());
-
-            Assert.That(() => scenario.Build(), Throws.TypeOf<InvalidOperationException>());
-        }
-
-        [Test]
-        public void ThenItThrowsWhenNoLoadProfileIsDefined()
-        {
-            var scenario = Scenario.Create("noload").AddStep("login", AnyStep());
+            var scenario = Scenario.Create("empty");
 
             Assert.That(() => scenario.Build(), Throws.TypeOf<InvalidOperationException>());
         }

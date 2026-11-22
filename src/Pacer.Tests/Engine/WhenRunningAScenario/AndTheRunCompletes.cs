@@ -1,4 +1,6 @@
 using Pacer.Load;
+using Pacer.Scenarios;
+using Pacer.Steps;
 
 namespace Pacer.Tests.Engine.WhenRunningAScenario;
 
@@ -66,6 +68,27 @@ public partial class WhenRunningAScenario
             var report = await RunToCompletionAsync(scenario);
 
             Assert.That(report.LoadProfileKind, Is.EqualTo("Load"));
+        }
+
+        [Test]
+        public async Task ThenJourneysStillRunningAtTheEndAreNotCountedAsFailures()
+        {
+            // The second step never finishes on its own, so every journey is in flight when the run stops.
+            var scenario = Scenario.Create("in-flight")
+                .AddStep("login", _ => ValueTask.FromResult(StepResult.Ok()))
+                .AddStep("wait", async (_, ct) =>
+                {
+                    await Task.Delay(Timeout.InfiniteTimeSpan, ct);
+                    return StepResult.Ok();
+                })
+                .Build()
+                .WithLoad(LoadProfiles.Load(2, TimeSpan.FromSeconds(10)));
+
+            var report = await RunToCompletionAsync(scenario);
+
+            Assert.That(report.Journey.Fail, Is.Zero);
+            Assert.That(report.Steps.Single(s => s.Name == "wait").Fail, Is.Zero);
+            Assert.That(report.Steps.Single(s => s.Name == "login").Ok, Is.GreaterThanOrEqualTo(2));
         }
     }
 }

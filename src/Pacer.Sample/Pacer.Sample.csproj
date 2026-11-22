@@ -10,8 +10,9 @@
     <ProjectReference Include="..\Pacer\Pacer.csproj" />
   </ItemGroup>
 
+  <!-- Load profiles live in configuration; copy it next to the executable, where Pacer reads it. -->
   <ItemGroup>
-    <Folder Include="reports\" />
+    <None Update="appsettings*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

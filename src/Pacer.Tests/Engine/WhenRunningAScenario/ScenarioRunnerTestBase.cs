@@ -40,8 +40,8 @@ public class ScenarioRunnerTestBase
                 return ValueTask.FromResult(StepResult.Ok());
             })
             .AddStep("purchase", (_, _) => ValueTask.FromResult(StepResult.Ok()))
-            .WithLoad(load)
-            .Build();
+            .Build()
+            .WithLoad(load);
     }
 
     /// <summary>

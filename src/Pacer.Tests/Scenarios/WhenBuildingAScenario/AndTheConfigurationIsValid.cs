@@ -13,7 +13,6 @@ public partial class WhenBuildingAScenario
                 .AddStep("login", AnyStep())
                 .AddStep("browse", AnyStep())
                 .AddStep("purchase", AnyStep())
-                .WithLoad(AnyLoad())
                 .Build();
 
             var stepNames = definition.Steps.Select(s => s.Name).ToArray();
@@ -27,7 +26,6 @@ public partial class WhenBuildingAScenario
             var definition = Scenario.Create("checkout")
                 .InGroup("ecommerce")
                 .AddStep("login", AnyStep())
-                .WithLoad(AnyLoad())
                 .Build();
 
             Assert.That(definition.Group, Is.EqualTo("ecommerce"));
@@ -38,10 +36,21 @@ public partial class WhenBuildingAScenario
         {
             var definition = Scenario.Create("checkout")
                 .AddStep("login", AnyStep())
-                .WithLoad(AnyLoad())
                 .Build();
 
             Assert.That(definition.Warmup, Is.EqualTo(TimeSpan.Zero));
+        }
+
+        [Test]
+        public void ThenItDefaultsTheLoadProfileUntilConfigurationIsApplied()
+        {
+            var definition = Scenario.Create("checkout")
+                .AddStep("login", AnyStep())
+                .Build();
+
+            Assert.That(definition.Load.Kind, Is.EqualTo("Load"));
+            Assert.That(definition.Load.PeakUsers, Is.EqualTo(10));
+            Assert.That(definition.Load.TotalDuration, Is.EqualTo(TimeSpan.FromMinutes(1)));
         }
     }
 }

@@ -3,8 +3,11 @@ using Pacer.Scenarios;
 
 namespace Pacer.Engine;
 
-/// <summary>The implementation of <see cref="ISetupContext"/> passed to scenario setup and teardown.</summary>
-internal sealed class SetupContext : ISetupContext
+/// <summary>
+/// The implementation of <see cref="ISetupContext"/> and <see cref="ITeardownContext"/> passed to
+/// scenario setup and teardown. <see cref="ScenarioData"/> is filled in once setup returns.
+/// </summary>
+internal sealed class SetupContext : ITeardownContext
 {
     public SetupContext(IServiceProvider services, ILogger logger, string scenarioName)
     {
@@ -18,4 +21,6 @@ internal sealed class SetupContext : ISetupContext
     public ILogger Logger { get; }
 
     public string ScenarioName { get; }
+
+    public object? ScenarioData { get; set; }
 }

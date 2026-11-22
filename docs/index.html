@@ -183,8 +183,6 @@
       <dd>One-time setup, then a pipeline of measured steps per virtual user. Data flows from step to step like a real user journey.</dd>
       <dt>Real percentiles</dt>
       <dd>Bounded-memory HDR-style histograms give accurate p50 through p99.9. Latencies under 5&nbsp;ms are shown in microseconds.</dd>
-      <dt>Thresholds</dt>
-      <dd>Declare limits like <code>p99 &lt; 100 ms</code> on a step or the whole journey and fail the run when they're breached.</dd>
       <dt>Baselines &amp; history</dt>
       <dd>Save a run as a named baseline like <code>--save-baseline v1.3.0</code>, diff the next release against it with <code>--baseline v1.3.0</code>, and exit non-zero on regression with <code>--fail-on-regression</code>.</dd>
       <dt>Reports</dt>
@@ -203,7 +201,7 @@
       <div class="sec-num"><b>02</b> / Load profiles</div>
       <div>
         <h2>Shape the traffic</h2>
-        <p>A closed model: you choose how many virtual users run, and the profile decides how that number moves over time. Pick one per scenario in <code>appsettings.json</code> or on the command line — no code change.</p>
+        <p>A closed model: you choose how many virtual users run, and the profile decides how that number moves over time. Pick one in <code>appsettings.json</code> or on the command line — no code change.</p>
       </div>
     </div>
     <div class="profiles">
@@ -287,11 +285,9 @@
         <div class="fn"><span>appsettings.json</span><span>JSON</span></div>
 <pre><code>{
   <span class="s">"Pacer"</span>: {
-    <span class="s">"Scenarios"</span>: {
-      <span class="s">"checkout"</span>: {
-        <span class="s">"Profile"</span>: <span class="s">"ramp"</span>, <span class="s">"Users"</span>: <span class="n">200</span>,
-        <span class="s">"RampUp"</span>: <span class="s">"30s"</span>, <span class="s">"Hold"</span>: <span class="s">"1m"</span>, <span class="s">"RampDown"</span>: <span class="s">"30s"</span>
-      }
+    <span class="s">"Load"</span>: {
+      <span class="s">"Profile"</span>: <span class="s">"ramp"</span>, <span class="s">"Users"</span>: <span class="n">200</span>,
+      <span class="s">"RampUp"</span>: <span class="s">"30s"</span>, <span class="s">"Hold"</span>: <span class="s">"1m"</span>, <span class="s">"RampDown"</span>: <span class="s">"30s"</span>
     }
   }
 }</code></pre>

@@ -1,30 +1,20 @@
 using Pacer.Hosting;
 using Pacer.Load;
-using Pacer.Scenarios;
-using Pacer.Steps;
 
 namespace Pacer.Tests.Hosting.WhenPlanningARun;
 
 public partial class WhenPlanningARun
 {
-    public class AndApplyingOverrides
+    public class AndApplyingOverrides : PlannerTestBase
     {
-        private static ScenarioDefinition Scenario()
-        {
-            return Pacer.Scenarios.Scenario.Create("checkout")
-                .AddStep("step", (_, _) => ValueTask.FromResult(StepResult.Ok()))
-                .WithLoad(LoadProfiles.Load(10, TimeSpan.FromSeconds(30)))
-                .Build();
-        }
-
         [Test]
-        public void ThenItReturnsTheSameScenarioWhenNothingIsOverridden()
+        public void ThenItUsesTheBuiltInDefaultWhenNothingIsConfigured()
         {
-            var scenario = Scenario();
+            var result = RunPlanner.Apply(Scenario(), new RunOptions());
 
-            var result = RunPlanner.Apply(scenario, new RunOptions());
-
-            Assert.That(result, Is.SameAs(scenario));
+            Assert.That(result.Load.Kind, Is.EqualTo("Load"));
+            Assert.That(result.Load.PeakUsers, Is.EqualTo(10));
+            Assert.That(result.Load.TotalDuration, Is.EqualTo(TimeSpan.FromMinutes(1)));
         }
 
         [Test]
@@ -56,7 +46,7 @@ public partial class WhenPlanningARun
         {
             Assert.That(
                 () => RunPlanner.Apply(Scenario(), new RunOptions { Profile = "rocket" }),
-                Throws.TypeOf<ArgumentException>());
+                Throws.TypeOf<LoadConfigurationException>().With.Message.Contains("rocket"));
         }
 
         [Test]
@@ -65,6 +55,14 @@ public partial class WhenPlanningARun
             var result = RunPlanner.Apply(Scenario(), new RunOptions { Warmup = TimeSpan.FromSeconds(5) });
 
             Assert.That(result.Warmup, Is.EqualTo(TimeSpan.FromSeconds(5)));
+        }
+
+        [Test]
+        public void ThenTheCodedWarmupIsKeptWhenNothingOverridesIt()
+        {
+            var result = RunPlanner.Apply(Scenario(warmup: TimeSpan.FromSeconds(2)), new RunOptions());
+
+            Assert.That(result.Warmup, Is.EqualTo(TimeSpan.FromSeconds(2)));
         }
     }
 }

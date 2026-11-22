@@ -1,3 +1,4 @@
+using Pacer.History;
 using Pacer.Metrics;
 
 namespace Pacer.Tests.Reporting;
@@ -44,6 +45,48 @@ internal static class ReportFixtures
                 new IntervalSnapshot(TimeSpan.FromSeconds(3), 200, 180, 4, 91),
             ],
             Environment = new EnvironmentInfo("TestOS", ".NET 10.0", 8, "test-machine"),
+        };
+    }
+
+    /// <summary>A comparison against baseline <paramref name="name"/>, optionally with a regressed login p95.</summary>
+    public static BaselineComparison Comparison(string name = "v1.3.0", bool regressed = false, bool likeForLike = true)
+    {
+        return new BaselineComparison
+        {
+            BaselineName = name,
+            TolerancePercent = 20,
+            BaselineStartedAt = new DateTimeOffset(2026, 6, 1, 9, 0, 0, TimeSpan.Zero),
+            BaselineLoadProfileKind = likeForLike ? "Ramp" : "Load",
+            BaselinePeakUsers = likeForLike ? 200 : 50,
+            IsLikeForLike = likeForLike,
+            Metrics =
+            [
+                new MetricComparison("login", "mean_ms", 5.0, 5.25, 5.0, Regressed: false),
+                new MetricComparison("login", "p95_ms", 10.0, regressed ? 20.0 : 10.5, regressed ? 100.0 : 5.0, Regressed: regressed),
+                new MetricComparison("checkout", "rps", 10.0, 10.5, 5.0, Regressed: false),
+            ],
+        };
+    }
+
+    /// <summary>A step whose latency is all below the 5 ms microsecond-rendering threshold.</summary>
+    public static StepStats FastStep(string name = "ping")
+    {
+        return new StepStats
+        {
+            Name = name,
+            Ok = 100,
+            Fail = 0,
+            BytesSent = 128,
+            BytesReceived = 256,
+            RequestsPerSecond = 100.0,
+            MinMs = 0.5,
+            MeanMs = 2.5,
+            MaxMs = 4.0,
+            P50Ms = 2.0,
+            P75Ms = 3.0,
+            P95Ms = 3.5,
+            P99Ms = 3.9,
+            P999Ms = 4.0,
         };
     }
 }

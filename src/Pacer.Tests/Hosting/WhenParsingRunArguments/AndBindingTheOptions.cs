@@ -10,7 +10,9 @@ public partial class WhenParsingRunArguments
         {
             var cli = new PacerCommandLine(
                 (_, _) => Task.FromResult(0),
-                _ => Task.FromResult(0));
+                _ => Task.FromResult(0),
+                (_, _) => Task.FromResult(0),
+                (_, _) => Task.FromResult(0));
             var parseResult = cli.Root.Parse(args);
             return cli.BindRun(parseResult);
         }
@@ -37,6 +39,44 @@ public partial class WhenParsingRunArguments
             var options = Bind("run", "--duration", "2");
 
             Assert.That(options.Duration, Is.EqualTo(TimeSpan.FromMinutes(2)));
+        }
+
+        [Test]
+        public void ThenItParsesADurationWithAUnit()
+        {
+            var options = Bind("run", "--duration", "45s");
+
+            Assert.That(options.Duration, Is.EqualTo(TimeSpan.FromSeconds(45)));
+        }
+
+        [Test]
+        public void ThenItParsesTheWarmup()
+        {
+            var options = Bind("run", "--warmup", "10s");
+
+            Assert.That(options.Warmup, Is.EqualTo(TimeSpan.FromSeconds(10)));
+        }
+
+        [Test]
+        public void ThenUnsetDurationBindsToNull()
+        {
+            var options = Bind("run", "--scenario", "checkout");
+
+            Assert.That(options.Duration, Is.Null);
+        }
+
+        [Test]
+        public void ThenAnInvalidDurationIsAParseError()
+        {
+            var cli = new PacerCommandLine(
+                (_, _) => Task.FromResult(0),
+                _ => Task.FromResult(0),
+                (_, _) => Task.FromResult(0),
+                (_, _) => Task.FromResult(0));
+
+            var parseResult = cli.Root.Parse(["run", "--duration", "soon"]);
+
+            Assert.That(parseResult.Errors, Is.Not.Empty);
         }
 
         [Test]

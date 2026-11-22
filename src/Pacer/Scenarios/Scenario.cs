@@ -8,9 +8,11 @@ namespace Pacer.Scenarios;
 /// steps and configuration, then call <see cref="Build"/> (the engine and registry call it for you).
 /// </summary>
 /// <example>
-/// A three-step checkout journey with inline one-time setup, a group, and a ramp (bell-curve) load.
-/// The setup runs once and its result is read by every step via
-/// <see cref="Steps.StepContextExtensions.ScenarioDataAs{T}"/>:
+/// A three-step checkout journey with inline one-time setup and a group. The setup runs once and its
+/// result is read by every step via <see cref="Steps.StepContextExtensions.ScenarioDataAs{T}"/>.
+/// The load profile is not part of the scenario: it comes from configuration (<c>Pacer:Load</c> in
+/// <c>appsettings.json</c>) or the <c>run</c> command's flags —
+/// see <see cref="Hosting.RunPlanner"/>.
 /// <code><![CDATA[
 /// var checkout = Scenario.Create("checkout")
 ///     .InGroup("storefront")
@@ -22,12 +24,7 @@ namespace Pacer.Scenarios;
 ///         return StepResult.Ok(payload: data.AuthToken);
 ///     })
 ///     .AddStep("browse", async ctx => StepResult.Ok(bytesReceived: 4096))
-///     .AddStep("purchase", async ctx => StepResult.Ok())
-///     .WithLoad(LoadProfiles.Ramp(
-///         peak: 50,
-///         rampUp: TimeSpan.FromSeconds(10),
-///         hold: TimeSpan.FromSeconds(20),
-///         rampDown: TimeSpan.FromSeconds(10)));
+///     .AddStep("purchase", async ctx => StepResult.Ok());
 /// ]]></code>
 /// </example>
 public sealed class Scenario
@@ -39,7 +36,6 @@ public sealed class Scenario
     private ScenarioSetupDelegate? _setup;
     private ScenarioTeardownDelegate? _teardown;
     private TimeSpan _warmup = TimeSpan.Zero;
-    private LoadProfile? _load;
 
     private Scenario(string name)
     {
@@ -121,22 +117,16 @@ public sealed class Scenario
         return this;
     }
 
-    /// <summary>Sets the load profile that drives virtual-user concurrency.</summary>
-    public Scenario WithLoad(LoadProfile load)
-    {
-        ArgumentNullException.ThrowIfNull(load);
-        _load = load;
-        return this;
-    }
-
-    /// <summary>Validates the configuration and produces an immutable <see cref="ScenarioDefinition"/>.</summary>
+    /// <summary>
+    /// Validates the configuration and produces an immutable <see cref="ScenarioDefinition"/>. The
+    /// definition carries Pacer's default load profile until the host replaces it with the configured
+    /// one (see <see cref="Hosting.RunPlanner"/>).
+    /// </summary>
     public ScenarioDefinition Build()
     {
         if (_steps.Count == 0)
             throw new InvalidOperationException($"Scenario '{_name}' must define at least one step.");
-        if (_load is null)
-            throw new InvalidOperationException($"Scenario '{_name}' must define a load profile via {nameof(WithLoad)}.");
 
-        return new ScenarioDefinition(_name, _group, _steps.ToArray(), _setup, _teardown, _warmup, _load);
+        return new ScenarioDefinition(_name, _group, _steps.ToArray(), _setup, _teardown, _warmup, LoadPlan.Defaults.Build());
     }
 }

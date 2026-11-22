@@ -28,7 +28,10 @@ public sealed class ScenarioDefinition
     /// <summary>How long to run un-recorded warm-up journeys before measurement begins.</summary>
     public TimeSpan Warmup { get; }
 
-    /// <summary>The load profile that drives virtual-user concurrency over time.</summary>
+    /// <summary>
+    /// The load profile that drives virtual-user concurrency over time. Resolved from configuration and
+    /// command-line flags by <see cref="Hosting.RunPlanner"/>; Pacer's default until then.
+    /// </summary>
     public LoadProfile Load { get; }
 
     internal ScenarioDefinition(
@@ -49,7 +52,7 @@ public sealed class ScenarioDefinition
         Load = load;
     }
 
-    /// <summary>Returns a copy of this definition with a different load profile (used for CLI overrides).</summary>
+    /// <summary>Returns a copy of this definition with a different load profile (used to apply the configured load).</summary>
     public ScenarioDefinition WithLoad(LoadProfile load)
     {
         ArgumentNullException.ThrowIfNull(load);

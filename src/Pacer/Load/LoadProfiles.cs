@@ -3,7 +3,9 @@ namespace Pacer.Load;
 /// <summary>
 /// Factory methods for the five built-in closed-model load profiles. Each returns a
 /// <see cref="LoadProfile"/> built from <see cref="LoadStage"/>s; callers can also construct a
-/// <see cref="LoadProfile"/> directly from custom stages.
+/// <see cref="LoadProfile"/> directly from custom stages. Hosted Pacer apps don't call these from
+/// scenario code: the profile is chosen in configuration (see <see cref="LoadSettings"/>) and built
+/// here. They remain available for custom runners via <see cref="Scenarios.ScenarioDefinition.WithLoad"/>.
 /// </summary>
 /// <example>
 /// <code><![CDATA[

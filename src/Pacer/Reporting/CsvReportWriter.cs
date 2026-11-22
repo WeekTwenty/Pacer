@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using Pacer.Metrics;
 
@@ -24,10 +25,46 @@ public sealed class CsvReportWriter : IReportWriter
             var baseName = ReportFileName.ForScenario(report);
             await File.WriteAllTextAsync(Path.Combine(outputDirectory, $"{baseName}.csv"), RenderSummary([report]), cancellationToken).ConfigureAwait(false);
 
+            if (report.Baseline is not null)
+                await File.WriteAllTextAsync(Path.Combine(outputDirectory, $"{baseName}-baseline.csv"), RenderBaseline([report]), cancellationToken).ConfigureAwait(false);
+
             var intervals = RenderIntervals([report]);
             if (intervals is not null)
                 await File.WriteAllTextAsync(Path.Combine(outputDirectory, $"{baseName}-intervals.csv"), intervals, cancellationToken).ConfigureAwait(false);
         }
+    }
+
+    /// <summary>
+    /// Renders the baseline comparison CSV for the reports that were compared: one row per step metric.
+    /// Latency metrics (<c>*_ms</c>) are in milliseconds, <c>rps</c> in requests per second and
+    /// <c>fail_rate</c> as a 0–1 fraction.
+    /// </summary>
+    public static string RenderBaseline(IReadOnlyList<RunReport> reports)
+    {
+        ArgumentNullException.ThrowIfNull(reports);
+
+        var sb = new StringBuilder();
+        sb.AppendLine("scenario,baseline,step,metric,baseline_value,current_value,percent_change,regressed");
+
+        foreach (var report in reports)
+        {
+            if (report.Baseline is not { } comparison)
+                continue;
+
+            foreach (var metric in comparison.Metrics)
+            {
+                sb.Append(ReportFormatting.CsvEscape(report.ScenarioName)).Append(',')
+                  .Append(ReportFormatting.CsvEscape(comparison.BaselineName)).Append(',')
+                  .Append(ReportFormatting.CsvEscape(metric.StepName)).Append(',')
+                  .Append(metric.Metric).Append(',')
+                  .Append(metric.BaselineValue.ToString("0.######", CultureInfo.InvariantCulture)).Append(',')
+                  .Append(metric.CurrentValue.ToString("0.######", CultureInfo.InvariantCulture)).Append(',')
+                  .Append(metric.PercentChange.ToString("0.##", CultureInfo.InvariantCulture)).Append(',')
+                  .AppendLine(metric.Regressed ? "true" : "false");
+            }
+        }
+
+        return sb.ToString();
     }
 
     /// <summary>Renders the per-step summary CSV for all reports.</summary>
@@ -36,7 +73,7 @@ public sealed class CsvReportWriter : IReportWriter
         ArgumentNullException.ThrowIfNull(reports);
 
         var sb = new StringBuilder();
-        sb.AppendLine("scenario,row,ok,fail,total,rps,min_ms,mean_ms,p50_ms,p75_ms,p95_ms,p99_ms,p999_ms,max_ms,bytes_sent,bytes_received");
+        sb.AppendLine("scenario,row,ok,fail,total,rps,min_us,mean_us,p50_us,p75_us,p95_us,p99_us,p999_us,max_us,bytes_sent,bytes_received");
 
         foreach (var report in reports)
         {
@@ -83,14 +120,14 @@ public sealed class CsvReportWriter : IReportWriter
           .Append(ReportFormatting.Int(step.Fail)).Append(',')
           .Append(ReportFormatting.Int(step.Total)).Append(',')
           .Append(ReportFormatting.Rps(step.RequestsPerSecond)).Append(',')
-          .Append(ReportFormatting.Ms(step.MinMs)).Append(',')
-          .Append(ReportFormatting.Ms(step.MeanMs)).Append(',')
-          .Append(ReportFormatting.Ms(step.P50Ms)).Append(',')
-          .Append(ReportFormatting.Ms(step.P75Ms)).Append(',')
-          .Append(ReportFormatting.Ms(step.P95Ms)).Append(',')
-          .Append(ReportFormatting.Ms(step.P99Ms)).Append(',')
-          .Append(ReportFormatting.Ms(step.P999Ms)).Append(',')
-          .Append(ReportFormatting.Ms(step.MaxMs)).Append(',')
+          .Append(ReportFormatting.Int(ReportFormatting.Microseconds(step.MinMs))).Append(',')
+          .Append(ReportFormatting.Int(ReportFormatting.Microseconds(step.MeanMs))).Append(',')
+          .Append(ReportFormatting.Int(ReportFormatting.Microseconds(step.P50Ms))).Append(',')
+          .Append(ReportFormatting.Int(ReportFormatting.Microseconds(step.P75Ms))).Append(',')
+          .Append(ReportFormatting.Int(ReportFormatting.Microseconds(step.P95Ms))).Append(',')
+          .Append(ReportFormatting.Int(ReportFormatting.Microseconds(step.P99Ms))).Append(',')
+          .Append(ReportFormatting.Int(ReportFormatting.Microseconds(step.P999Ms))).Append(',')
+          .Append(ReportFormatting.Int(ReportFormatting.Microseconds(step.MaxMs))).Append(',')
           .Append(ReportFormatting.Int(step.BytesSent)).Append(',')
           .Append(ReportFormatting.Int(step.BytesReceived))
           .AppendLine();

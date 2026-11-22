@@ -1,0 +1,19 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Project Files/">
+    <File Path=".editorconfig" />
+    <File Path=".github/workflows/ci.yml" />
+    <File Path=".github/workflows/release.yml" />
+    <File Path=".gitignore" />
+    <File Path="LICENSE" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Pacer.Sample/Pacer.Sample.csproj" />
+    <Project Path="src/Pacer.Tests/Pacer.Tests.csproj" />
+    <Project Path="src/Pacer/Pacer.csproj" />
+  </Folder>
+</Solution>

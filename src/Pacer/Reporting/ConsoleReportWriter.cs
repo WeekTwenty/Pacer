@@ -10,7 +10,7 @@ namespace Pacer.Reporting;
 public sealed class ConsoleReportWriter : IReportWriter
 {
     private const int ColumnGap = 2;
-    private static readonly string[] Headers = ["step", "ok", "fail", "rps", "in", "out", "mean ms", "p95 ms", "p99 ms", "max ms"];
+    private static readonly string[] Headers = ["step", "ok", "fail", "rps", "in", "out", "mean", "p95", "p99", "max"];
 
     // Column indices whose values are coloured in data rows.
     private const int OkColumn = 1;
@@ -82,6 +82,7 @@ public sealed class ConsoleReportWriter : IReportWriter
         sb.AppendLine(light);
         sb.AppendLine(FormatRow(journey, widths, colorize));
         sb.Append(heavy);
+
         return sb.ToString();
     }
 
@@ -93,10 +94,10 @@ public sealed class ConsoleReportWriter : IReportWriter
         ReportFormatting.Rps(step.RequestsPerSecond),
         ReportFormatting.Bytes(step.BytesReceived),
         ReportFormatting.Bytes(step.BytesSent),
-        ReportFormatting.Ms(step.MeanMs),
-        ReportFormatting.Ms(step.P95Ms),
-        ReportFormatting.Ms(step.P99Ms),
-        ReportFormatting.Ms(step.MaxMs),
+        ReportFormatting.Latency(step.MeanMs),
+        ReportFormatting.Latency(step.P95Ms),
+        ReportFormatting.Latency(step.P99Ms),
+        ReportFormatting.Latency(step.MaxMs),
     ];
 
     private static string FormatRow(IReadOnlyList<string> cells, int[] widths, bool colorize)

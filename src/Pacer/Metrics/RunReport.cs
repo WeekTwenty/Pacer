@@ -1,3 +1,5 @@
+using Pacer.History;
+
 namespace Pacer.Metrics;
 
 /// <summary>Static information about the machine and runtime a test ran on.</summary>
@@ -49,4 +51,10 @@ public sealed record RunReport
 
     /// <summary>The machine and runtime the test ran on.</summary>
     public required EnvironmentInfo Environment { get; init; }
+
+    /// <summary>
+    /// The comparison against the baseline named by <c>--baseline</c>, or <see langword="null"/> when
+    /// the run wasn't compared (or no such baseline was saved for this scenario).
+    /// </summary>
+    public BaselineComparison? Baseline { get; init; }
 }

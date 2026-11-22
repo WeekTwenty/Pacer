@@ -19,8 +19,8 @@ public partial class WhenRunningAScenario
                     seenData = ctx.ScenarioData;
                     return ValueTask.FromResult(StepResult.Ok());
                 })
-                .WithLoad(LoadProfiles.Load(2, TimeSpan.FromSeconds(10)))
-                .Build();
+                .Build()
+                .WithLoad(LoadProfiles.Load(2, TimeSpan.FromSeconds(10)));
 
             await RunToCompletionAsync(scenario);
 
@@ -38,12 +38,32 @@ public partial class WhenRunningAScenario
                     torndown = true;
                     return ValueTask.CompletedTask;
                 })
-                .WithLoad(LoadProfiles.Load(2, TimeSpan.FromSeconds(10)))
-                .Build();
+                .Build()
+                .WithLoad(LoadProfiles.Load(2, TimeSpan.FromSeconds(10)));
 
             await RunToCompletionAsync(scenario);
 
             Assert.That(torndown, Is.True);
+        }
+
+        [Test]
+        public async Task ThenTeardownSeesTheSetupData()
+        {
+            string? seenByTeardown = null;
+            var scenario = Scenario.Create("with-setup-and-teardown")
+                .WithSetup(_ => ValueTask.FromResult("seeded-token"))
+                .AddStep("step", _ => ValueTask.FromResult(StepResult.Ok()))
+                .WithTeardown((ctx, _) =>
+                {
+                    seenByTeardown = ctx.ScenarioDataAs<string>();
+                    return ValueTask.CompletedTask;
+                })
+                .Build()
+                .WithLoad(LoadProfiles.Load(2, TimeSpan.FromSeconds(10)));
+
+            await RunToCompletionAsync(scenario);
+
+            Assert.That(seenByTeardown, Is.EqualTo("seeded-token"));
         }
     }
 }
