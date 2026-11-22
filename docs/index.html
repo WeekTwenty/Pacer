@@ -6,243 +6,331 @@
 <title>Pacer — load testing for .NET</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <meta name="description" content="Pacer is an open-source performance and load testing framework for .NET, built strictly on first-party Microsoft packages. Scenarios, steps, load profiles, percentiles, CSV/HTML reports.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0a0d14; --panel:#111722; --panel2:#0e141d; --line:#1e2733;
-    --text:#e6edf3; --muted:#93a1b5; --dim:#62718a;
-    --accent:#7c8bff; --accent2:#22d3ee; --ok:#34d399; --warn:#fbbf24;
-    --radius:16px; --maxw:1080px;
-    --grad:linear-gradient(120deg,#7c8bff,#22d3ee);
+    --paper:#f4f2ec; --paper-2:#ebe8df; --ink:#17171a; --ink-2:#4a4a52; --ink-3:#85838a;
+    --rule:#d6d2c7; --rule-strong:#17171a;
+    --accent:#d9480f;
+    --code-bg:#1b1b1f; --code-ink:#e8e6e1; --code-dim:#7c7a80;
+    --sans:"IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --maxw:1040px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#141416; --paper-2:#1f1f23; --ink:#ecebe6; --ink-2:#b4b2ad; --ink-3:#7a7880;
+      --rule:#2c2c31; --rule-strong:#ecebe6;
+      --accent:#ff6b2c;
+      --code-bg:#0b0b0d; --code-ink:#e8e6e1; --code-dim:#6f6d74;
+    }
   }
   *{box-sizing:border-box}
-  html{scroll-behavior:smooth}
-  body{
-    margin:0; background:var(--bg); color:var(--text);
-    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Inter,sans-serif;
-    line-height:1.6; -webkit-font-smoothing:antialiased;
-    background-image:
-      radial-gradient(60rem 40rem at 75% -10%, rgba(124,139,255,.16), transparent 60%),
-      radial-gradient(50rem 40rem at 10% 0%, rgba(34,211,238,.12), transparent 55%);
-    background-repeat:no-repeat;
-  }
-  a{color:inherit;text-decoration:none}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
   .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
-  .mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace}
+  code,pre{font-family:var(--mono)}
+  ::selection{background:var(--accent);color:#fff}
 
-  /* nav */
-  nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
-  .brand{display:flex;align-items:center;gap:12px;font-weight:800;font-size:1.25rem;letter-spacing:-.02em}
-  .logo{width:30px;height:30px;border-radius:9px;background:var(--grad);display:grid;place-items:center;box-shadow:0 6px 24px rgba(124,139,255,.4)}
-  .logo svg{width:18px;height:18px;display:block}
-  .navlinks{display:flex;gap:26px;align-items:center;color:var(--muted);font-weight:600;font-size:.95rem}
-  .navlinks a:hover{color:var(--text)}
+  /* top bar */
+  .top{display:flex;align-items:center;justify-content:space-between;padding:20px 0;border-bottom:1px solid var(--rule)}
+  .mark{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-weight:600;font-size:1rem;text-decoration:none;letter-spacing:-.01em}
+  .mark svg{width:22px;height:22px;display:block}
+  .top nav{display:flex;gap:24px;font-size:.92rem}
+  .top nav a{text-decoration:none;color:var(--ink-2)}
+  .top nav a:hover{color:var(--ink);text-decoration:underline;text-underline-offset:4px}
 
   /* hero */
-  .hero{padding:64px 0 36px;text-align:center}
-  .badge{display:inline-flex;gap:8px;align-items:center;border:1px solid var(--line);background:rgba(255,255,255,.02);
-    color:var(--muted);font-size:.8rem;font-weight:600;padding:6px 14px;border-radius:999px;margin-bottom:26px}
-  .badge .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 10px var(--ok)}
-  h1{font-size:clamp(2.6rem,7vw,4.6rem);line-height:1.02;letter-spacing:-.04em;margin:.1em 0 .25em;font-weight:850}
-  h1 .grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
-  .tag{font-size:clamp(1.05rem,2.5vw,1.4rem);color:var(--muted);max-width:640px;margin:0 auto 34px}
-  .cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:30px}
-  .btn{padding:13px 22px;border-radius:12px;font-weight:700;font-size:.98rem;border:1px solid transparent;transition:.15s;display:inline-flex;gap:9px;align-items:center}
-  .btn.primary{background:var(--grad);color:#0a0d14;box-shadow:0 10px 30px rgba(124,139,255,.35)}
-  .btn.primary:hover{transform:translateY(-2px);box-shadow:0 14px 38px rgba(124,139,255,.5)}
-  .btn.ghost{border-color:var(--line);color:var(--text);background:rgba(255,255,255,.02)}
-  .btn.ghost:hover{border-color:var(--accent);color:#fff}
-  .install{display:inline-flex;align-items:center;gap:14px;border:1px solid var(--line);background:var(--panel);
-    border-radius:12px;padding:11px 12px 11px 18px;margin:0 auto}
-  .install code{font-size:.98rem}
-  .install .pmt{color:var(--accent2)}
-  .copy{cursor:pointer;border:1px solid var(--line);background:var(--panel2);color:var(--muted);
-    border-radius:8px;padding:7px 11px;font-size:.8rem;font-weight:700;transition:.15s}
-  .copy:hover{color:#fff;border-color:var(--accent)}
+  .hero{display:grid;grid-template-columns:1.15fr .85fr;gap:56px;padding:72px 0 64px;align-items:end}
+  .hero h1{font-size:clamp(2.4rem,5.6vw,3.9rem);line-height:1.04;letter-spacing:-.035em;font-weight:700;margin:0 0 24px}
+  .hero h1 em{font-style:normal;color:var(--accent)}
+  .lede{font-size:1.12rem;color:var(--ink-2);max-width:34em;margin:0 0 32px}
+  .actions{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center}
+  .btn{display:inline-block;padding:11px 18px;background:var(--ink);color:var(--paper);text-decoration:none;font-weight:600;font-size:.95rem;border:1px solid var(--ink)}
+  .btn:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+  .link{font-weight:500;text-underline-offset:4px;text-decoration-thickness:1px}
+  .link:hover{color:var(--accent)}
 
-  /* section */
-  section{padding:54px 0}
-  .eyebrow{text-align:center;color:var(--accent2);font-weight:800;letter-spacing:.14em;text-transform:uppercase;font-size:.76rem;margin-bottom:10px}
-  h2{text-align:center;font-size:clamp(1.7rem,4vw,2.4rem);letter-spacing:-.03em;margin:0 0 8px;font-weight:820}
-  .sub{text-align:center;color:var(--muted);max-width:600px;margin:0 auto 40px}
+  .install{border:1px solid var(--rule-strong)}
+  .install .lbl{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid var(--rule-strong);font-family:var(--mono);font-size:.74rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3)}
+  .install code{display:block;padding:16px 14px;font-size:.98rem;white-space:nowrap;overflow-x:auto}
+  .install code .p{color:var(--ink-3);user-select:none}
+  .copy{cursor:pointer;font:inherit;font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;background:none;border:0;color:var(--ink);padding:0;text-decoration:underline;text-underline-offset:3px}
+  .copy:hover{color:var(--accent)}
+  .facts{margin:18px 0 0;padding:0;list-style:none;font-family:var(--mono);font-size:.82rem;color:var(--ink-2)}
+  .facts li{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px dotted var(--rule)}
+  .facts li span:last-child{color:var(--ink)}
 
-  /* features */
-  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:24px;transition:.18s}
-  .card:hover{border-color:#2c3a4e;transform:translateY(-3px);background:#131b27}
-  .card .ic{width:40px;height:40px;border-radius:11px;background:rgba(124,139,255,.12);display:grid;place-items:center;margin-bottom:14px;font-size:1.2rem}
-  .card h3{margin:0 0 6px;font-size:1.08rem;letter-spacing:-.01em}
-  .card p{margin:0;color:var(--muted);font-size:.93rem}
+  /* sections */
+  section{padding:64px 0;border-top:1px solid var(--rule)}
+  .sec-head{display:grid;grid-template-columns:200px 1fr;gap:32px;margin-bottom:36px}
+  .sec-num{font-family:var(--mono);font-size:.8rem;color:var(--ink-3);padding-top:8px}
+  .sec-num b{color:var(--accent);font-weight:500}
+  h2{font-size:clamp(1.6rem,3.4vw,2.1rem);letter-spacing:-.025em;line-height:1.15;margin:0 0 10px;font-weight:700}
+  .sec-head p{margin:0;color:var(--ink-2);max-width:36em}
+
+  /* spec list */
+  .spec{margin:0;display:grid;grid-template-columns:200px 1fr;column-gap:32px;border-top:2px solid var(--rule-strong)}
+  .spec dt,.spec dd{padding:16px 0;border-bottom:1px solid var(--rule);margin:0}
+  .spec dt{font-weight:600}
+  .spec dd{color:var(--ink-2)}
+  .spec code{font-size:.86em;color:var(--ink);background:var(--paper-2);padding:1px 5px}
 
   /* profiles */
-  .profiles{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
-  .prof{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;text-align:center}
-  .prof svg{width:100%;height:64px;display:block;margin-bottom:10px}
-  .prof .nm{font-weight:750;font-size:.95rem}
-  .prof .ds{color:var(--dim);font-size:.78rem}
-  .prof .ln{fill:none;stroke:url(#g);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
-  .prof .ar{fill:url(#ga)}
+  .profiles{display:grid;grid-template-columns:repeat(5,1fr);border-top:2px solid var(--rule-strong);border-left:1px solid var(--rule)}
+  .prof{border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:18px 16px 16px;min-width:0}
+  .prof svg{display:block;width:100%;height:auto;margin-bottom:14px}
+  .prof .axis{stroke:var(--ink-3);stroke-width:1;fill:none}
+  .prof .grid{stroke:var(--rule);stroke-width:1;stroke-dasharray:2 3}
+  .prof .line{stroke:var(--accent);stroke-width:2;fill:none}
+  .prof .fill{fill:var(--accent);opacity:.08}
+  .prof .ax{font-family:var(--mono);font-size:9px;fill:var(--ink-3)}
+  .prof h3{margin:0;font-size:1rem;font-weight:600}
+  .prof p{margin:2px 0 8px;font-size:.86rem;color:var(--ink-2)}
+  .prof code{font-size:.74rem;color:var(--ink-3);word-break:break-word}
 
-  /* code + console */
-  .split{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:stretch}
-  .code{background:var(--panel2);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
-  .code .bar{display:flex;align-items:center;gap:7px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
-  .code .bar i{width:11px;height:11px;border-radius:50%;display:inline-block}
-  .code .bar .t{margin-left:10px;color:var(--dim);font-size:.8rem}
-  pre{margin:0;padding:18px 20px;overflow:auto;font-size:.86rem;line-height:1.65}
-  pre code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
-  .k{color:#c4b5fd}.s{color:#86efac}.c{color:#5b6b82}.f{color:#7dd3fc}.n{color:#fca5a5}
-  .term{color:#cfe1ff}
-  .term .hd{color:var(--accent2)}
-  .term .ok{color:var(--ok)}.term .fail{color:#fb7185}.term .rule{color:#36465c}
+  /* quickstart */
+  .steps{display:grid;grid-template-columns:200px 1fr;column-gap:32px;row-gap:28px}
+  .steps>.lab{font-family:var(--mono);font-size:.8rem;color:var(--ink-3);padding-top:12px}
+  .steps>.lab b{display:block;color:var(--ink);font-family:var(--sans);font-size:.98rem;font-weight:600;margin-top:2px}
+  .block{background:var(--code-bg);color:var(--code-ink);min-width:0}
+  .block .fn{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.74rem;color:var(--code-dim);padding:10px 16px;border-bottom:1px solid #2e2e33}
+  pre{margin:0;padding:18px 18px 20px;overflow-x:auto;font-size:.84rem;line-height:1.7}
+  .k{color:#ff8a57}.s{color:#b5d99c}.n{color:#f2c46d}.t{color:#9cc4e4}
+  .term .ok{color:#7ad48d}.term .bad{color:#ff7b7b}.term .r{color:#4a4a50}.term .h{color:var(--code-dim)}
 
-  footer{border-top:1px solid var(--line);padding:34px 0;color:var(--dim);text-align:center;font-size:.9rem}
-  footer a{color:var(--muted)}footer a:hover{color:#fff}
+  footer{border-top:2px solid var(--rule-strong);padding:28px 0 48px;font-size:.88rem;color:var(--ink-2)}
+  footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
+  footer a{text-underline-offset:3px}
+  footer a:hover{color:var(--accent)}
 
-  @media(max-width:860px){
-    .grid{grid-template-columns:1fr 1fr}
+  @media (max-width:900px){
+    .hero{grid-template-columns:1fr;gap:36px;padding:48px 0}
+    .sec-head,.spec,.steps{grid-template-columns:1fr}
+    .sec-head{gap:6px}
+    .sec-num{padding-top:0}
+    .spec dt{padding-bottom:2px;border-bottom:0}
+    .spec dd{padding-top:0}
+    .steps{row-gap:10px}
+    .steps>.lab{padding-top:14px}
     .profiles{grid-template-columns:repeat(2,1fr)}
-    .split{grid-template-columns:1fr}
-    .navlinks a:not(.gh){display:none}
   }
-  @media(max-width:540px){.grid{grid-template-columns:1fr}}
+  @media (max-width:560px){
+    body{font-size:16px}
+    .wrap{padding:0 16px}
+    .top nav a:not(.gh){display:none}
+  }
 </style>
 </head>
 <body>
+
 <div class="wrap">
-  <nav>
-    <div class="brand">
-      <span class="logo" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M4 16a8 8 0 0 1 16 0" stroke="#0a0d14" stroke-width="2.4" stroke-linecap="round"/><path d="M12 16l5-6" stroke="#0a0d14" stroke-width="2.4" stroke-linecap="round"/></svg>
-      </span>
-      Pacer
-    </div>
-    <div class="navlinks">
+  <header class="top">
+    <a class="mark" href="#" aria-label="Pacer home">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3.5 17a8.5 8.5 0 0 1 17 0" stroke="currentColor" stroke-width="2.2" stroke-linecap="square"/><path d="M12 17l3.07-3.69" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="square"/></svg>
+      pacer
+    </a>
+    <nav>
       <a href="#features">Features</a>
-      <a href="#profiles">Load&nbsp;profiles</a>
+      <a href="#profiles">Profiles</a>
       <a href="#quickstart">Quickstart</a>
-      <a class="gh" href="https://github.com/WeekTwenty/Pacer">GitHub&nbsp;↗</a>
+      <a class="gh" href="https://github.com/WeekTwenty/Pacer">GitHub</a>
+    </nav>
+  </header>
+
+  <div class="hero">
+    <div>
+      <h1>Load testing for .NET, <em>without the baggage.</em></h1>
+      <p class="lede">An open-source performance and load testing framework built only on first-party
+        Microsoft packages. Write scenarios as a pipeline of steps, run them under a realistic load
+        profile, and read latency percentiles in the console, CSV or HTML.</p>
+      <div class="actions">
+        <a class="btn" href="https://www.nuget.org/packages/Pacer">Get it on NuGet</a>
+        <a class="link" href="https://github.com/WeekTwenty/Pacer">Source on GitHub →</a>
+      </div>
     </div>
-  </nav>
+    <div>
+      <div class="install">
+        <div class="lbl"><span>Install</span><button class="copy" id="copyBtn" data-cmd="dotnet add package Pacer">Copy</button></div>
+        <code><span class="p">$ </span>dotnet add package Pacer</code>
+      </div>
+      <ul class="facts">
+        <li><span>Target</span><span>.NET 10</span></li>
+        <li><span>Third-party dependencies</span><span>0</span></li>
+        <li><span>Load profiles</span><span>5 + custom</span></li>
+        <li><span>Licence</span><span>Apache-2.0</span></li>
+      </ul>
+    </div>
+  </div>
 </div>
 
-<header class="hero wrap">
-  <span class="badge"><span class="dot"></span> .NET 10 &middot; zero third-party dependencies</span>
-  <h1>Load testing for .NET,<br><span class="grad">without the baggage.</span></h1>
-  <p class="tag">Pacer is an open-source performance &amp; load testing framework built strictly on
-    first-party Microsoft packages. Define scenarios as a pipeline of steps, drive them under realistic
-    load profiles, and get latency percentiles in console, CSV &amp; HTML.</p>
-  <div class="cta">
-    <a class="btn primary" href="https://www.nuget.org/packages/Pacer">Install from NuGet</a>
-    <a class="btn ghost" href="https://github.com/WeekTwenty/Pacer">⭐ Star on GitHub</a>
-  </div>
-  <div class="install">
-    <code class="mono"><span class="pmt">$</span> dotnet add package Pacer</code>
-    <button class="copy" id="copyBtn" data-cmd="dotnet add package Pacer">Copy</button>
-  </div>
-</header>
-
-<section id="features" class="wrap">
-  <div class="eyebrow">Why Pacer</div>
-  <h2>Everything you need, nothing you don't</h2>
-  <p class="sub">A focused engine with a clean fluent API — no plugins, no telemetry, no surprise transitive packages.</p>
-  <div class="grid">
-    <div class="card"><div class="ic">🧩</div><h3>First-party only</h3><p>Built on <span class="mono">Microsoft.Extensions.*</span> and <span class="mono">System.CommandLine</span>. No third-party runtime dependencies — ever.</p></div>
-    <div class="card"><div class="ic">🪜</div><h3>Five load profiles</h3><p>Load, Soak, Spike, Stress and Ramp out of the box, plus custom stage composition.</p></div>
-    <div class="card"><div class="ic">⛓️</div><h3>Fluent scenarios</h3><p>Inline setup and a step pipeline per virtual user — data flows step → step like a real user journey.</p></div>
-    <div class="card"><div class="ic">📊</div><h3>Real percentiles</h3><p>Bounded-memory HDR-style histograms give accurate p50–p99.9, plus live <span class="mono">dotnet-counters</span> metrics.</p></div>
-    <div class="card"><div class="ic">📄</div><h3>Console, CSV &amp; HTML</h3><p>Polished reports out of the box, and a pluggable <span class="mono">IReportWriter</span> for your own formats.</p></div>
-    <div class="card"><div class="ic">🎯</div><h3>Deterministic core</h3><p>Built on <span class="mono">TimeProvider</span>, so the engine is fully unit-tested with a fake clock — no flaky sleeps.</p></div>
-  </div>
-</section>
-
-<section id="profiles" class="wrap">
-  <div class="eyebrow">Model real traffic</div>
-  <h2>Built-in load profiles</h2>
-  <p class="sub">Closed-model concurrency — you control the number of virtual users, and the profile shapes it over time.</p>
-  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7c8bff"/><stop offset="1" stop-color="#22d3ee"/></linearGradient>
-    <linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(124,139,255,.28)"/><stop offset="1" stop-color="rgba(124,139,255,0)"/></linearGradient>
-  </defs></svg>
-  <div class="profiles">
-    <div class="prof">
-      <svg viewBox="0 0 160 64"><path class="ar" d="M6 20 H154 V60 H6 Z"/><polyline class="ln" points="6,20 154,20"/></svg>
-      <div class="nm">Load</div><div class="ds">constant users</div>
+<section id="features">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-num"><b>01</b> / Features</div>
+      <div>
+        <h2>A small engine that does one job</h2>
+        <p>No plugins, no telemetry, no surprise transitive packages.</p>
+      </div>
     </div>
-    <div class="prof">
-      <svg viewBox="0 0 160 64"><path class="ar" d="M6 22 H154 V60 H6 Z"/><polyline class="ln" points="6,22 154,22"/></svg>
-      <div class="nm">Soak</div><div class="ds">endurance hold</div>
-    </div>
-    <div class="prof">
-      <svg viewBox="0 0 160 64"><path class="ar" d="M6 48 H60 V14 H100 V48 H154 V60 H6 Z"/><polyline class="ln" points="6,48 60,48 60,14 100,14 100,48 154,48"/></svg>
-      <div class="nm">Spike</div><div class="ds">sudden surge</div>
-    </div>
-    <div class="prof">
-      <svg viewBox="0 0 160 64"><path class="ar" d="M6 52 H44 V40 H82 V26 H120 V12 H154 V60 H6 Z"/><polyline class="ln" points="6,52 44,52 44,40 82,40 82,26 120,26 120,12 154,12"/></svg>
-      <div class="nm">Stress</div><div class="ds">staircase up</div>
-    </div>
-    <div class="prof">
-      <svg viewBox="0 0 160 64"><path class="ar" d="M6 56 L60 14 H100 L154 56 V60 H6 Z"/><polyline class="ln" points="6,56 60,14 100,14 154,56"/></svg>
-      <div class="nm">Ramp</div><div class="ds">bell curve</div>
-    </div>
+    <dl class="spec">
+      <dt>First-party only</dt>
+      <dd>Built on <code>Microsoft.Extensions.*</code> and <code>System.CommandLine</code>. Nothing else at runtime.</dd>
+      <dt>Fluent scenarios</dt>
+      <dd>One-time setup, then a pipeline of measured steps per virtual user. Data flows from step to step like a real user journey.</dd>
+      <dt>Real percentiles</dt>
+      <dd>Bounded-memory HDR-style histograms give accurate p50 through p99.9. Latencies under 5&nbsp;ms are shown in microseconds.</dd>
+      <dt>Thresholds</dt>
+      <dd>Declare limits like <code>p99 &lt; 100 ms</code> on a step or the whole journey and fail the run when they're breached.</dd>
+      <dt>Baselines &amp; history</dt>
+      <dd>Save a run as a named baseline like <code>--save-baseline v1.3.0</code>, diff the next release against it with <code>--baseline v1.3.0</code>, and exit non-zero on regression with <code>--fail-on-regression</code>.</dd>
+      <dt>Reports</dt>
+      <dd>Console, CSV and a self-contained HTML page out of the box. Bring your own format with <code>IReportWriter</code>.</dd>
+      <dt>Live metrics</dt>
+      <dd>A <code>Meter("Pacer")</code> you can watch mid-run with <code>dotnet-counters</code>.</dd>
+      <dt>Deterministic core</dt>
+      <dd>The engine runs on <code>TimeProvider</code>, so it's unit-tested against a fake clock. No sleeps, no flaky timing.</dd>
+    </dl>
   </div>
 </section>
 
-<section id="quickstart" class="wrap">
-  <div class="eyebrow">Quickstart</div>
-  <h2>From zero to a load test in one file</h2>
-  <p class="sub">Register a scenario, hand your args to Pacer, and run it.</p>
-  <div class="split">
-    <div class="code">
-      <div class="bar"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i><span class="t mono">Program.cs</span></div>
-<pre class="mono"><code><span class="k">return await</span> PacerApplication.<span class="f">RunAsync</span>(args, builder =&gt;
+<section id="profiles">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-num"><b>02</b> / Load profiles</div>
+      <div>
+        <h2>Shape the traffic</h2>
+        <p>A closed model: you choose how many virtual users run, and the profile decides how that number moves over time. Pick one per scenario in <code>appsettings.json</code> or on the command line — no code change.</p>
+      </div>
+    </div>
+    <div class="profiles">
+      <div class="prof">
+        <svg viewBox="0 0 160 84" aria-hidden="true">
+          <path class="fill" d="M14 24 H156 V70 H14 Z"/>
+          <polyline class="line" points="14,70 14,24 156,24"/>
+          <polyline class="axis" points="14,8 14,70 156,70"/>
+          <text class="ax" x="2" y="14">u</text><text class="ax" x="150" y="82">t</text>
+        </svg>
+        <h3>Load</h3><p>Constant users for a duration.</p><code>"Profile": "load"</code>
+      </div>
+      <div class="prof">
+        <svg viewBox="0 0 160 84" aria-hidden="true">
+          <path class="fill" d="M14 34 H156 V70 H14 Z"/>
+          <polyline class="line" points="14,70 14,34 156,34"/>
+          <polyline class="axis" points="14,8 14,70 156,70"/>
+          <line class="grid" x1="60" y1="24" x2="110" y2="24"/>
+          <text class="ax" x="2" y="14">u</text><text class="ax" x="150" y="82">t</text>
+          <text class="ax" x="73" y="20">hours</text>
+        </svg>
+        <h3>Soak</h3><p>Held for a long time to find leaks.</p><code>"Profile": "soak"</code>
+      </div>
+      <div class="prof">
+        <svg viewBox="0 0 160 84" aria-hidden="true">
+          <path class="fill" d="M14 52 H66 V14 H100 V52 H156 V70 H14 Z"/>
+          <polyline class="line" points="14,70 14,52 66,52 66,14 100,14 100,52 156,52"/>
+          <polyline class="axis" points="14,8 14,70 156,70"/>
+          <text class="ax" x="2" y="14">u</text><text class="ax" x="150" y="82">t</text>
+        </svg>
+        <h3>Spike</h3><p>A baseline hit by a sudden surge.</p><code>"Profile": "spike"</code>
+      </div>
+      <div class="prof">
+        <svg viewBox="0 0 160 84" aria-hidden="true">
+          <path class="fill" d="M14 58 H50 V44 H86 V29 H122 V14 H156 V70 H14 Z"/>
+          <polyline class="line" points="14,70 14,58 50,58 50,44 86,44 86,29 122,29 122,14 156,14"/>
+          <polyline class="axis" points="14,8 14,70 156,70"/>
+          <text class="ax" x="2" y="14">u</text><text class="ax" x="150" y="82">t</text>
+        </svg>
+        <h3>Stress</h3><p>Steps up until something gives.</p><code>"Profile": "stress"</code>
+      </div>
+      <div class="prof">
+        <svg viewBox="0 0 160 84" aria-hidden="true">
+          <path class="fill" d="M14 70 L62 16 H108 L156 70 Z"/>
+          <polyline class="line" points="14,70 62,16 108,16 156,70"/>
+          <polyline class="axis" points="14,8 14,70 156,70"/>
+          <text class="ax" x="2" y="14">u</text><text class="ax" x="150" y="82">t</text>
+        </svg>
+        <h3>Ramp</h3><p>Ramp up, hold, ramp down.</p><code>"Profile": "ramp"</code>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="quickstart">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-num"><b>03</b> / Quickstart</div>
+      <div>
+        <h2>One file, one command</h2>
+        <p>Register a scenario, configure its load, and run it.</p>
+      </div>
+    </div>
+    <div class="steps">
+      <div class="lab">step 1<b>Describe the scenario</b></div>
+      <div class="block">
+        <div class="fn"><span>Program.cs</span><span>C#</span></div>
+<pre><code><span class="k">return await</span> <span class="t">PacerApplication</span>.RunAsync(args, builder =&gt;
 {
-    builder.Services.<span class="f">AddPacer</span>()
-        .<span class="f">AddScenario</span>(Scenario.<span class="f">Create</span>(<span class="s">"checkout"</span>)
-            .<span class="f">WithSetup</span>(<span class="k">async</span> ctx =&gt; <span class="k">new</span> CheckoutData(<span class="s">"token"</span>))
-            .<span class="f">AddStep</span>(<span class="s">"login"</span>,   <span class="k">async</span> ctx =&gt; StepResult.<span class="f">Ok</span>())
-            .<span class="f">AddStep</span>(<span class="s">"browse"</span>,  <span class="k">async</span> ctx =&gt; StepResult.<span class="f">Ok</span>())
-            .<span class="f">AddStep</span>(<span class="s">"purchase"</span>,<span class="k">async</span> ctx =&gt; StepResult.<span class="f">Ok</span>())
-            .<span class="f">WithLoad</span>(LoadProfiles.<span class="f">Ramp</span>(
-                peak: <span class="n">200</span>,
-                rampUp:   TimeSpan.<span class="f">FromSeconds</span>(<span class="n">30</span>),
-                hold:     TimeSpan.<span class="f">FromMinutes</span>(<span class="n">1</span>),
-                rampDown: TimeSpan.<span class="f">FromSeconds</span>(<span class="n">30</span>))));
-});
+    builder.Services.AddPacer()
+        .AddScenario(<span class="t">Scenario</span>.Create(<span class="s">"checkout"</span>)
+            .InGroup(<span class="s">"storefront"</span>)
+            .AddStep(<span class="s">"login"</span>,    <span class="k">async</span> ctx =&gt; <span class="t">StepResult</span>.Ok())
+            .AddStep(<span class="s">"browse"</span>,   <span class="k">async</span> ctx =&gt; <span class="t">StepResult</span>.Ok())
+            .AddStep(<span class="s">"purchase"</span>, <span class="k">async</span> ctx =&gt; <span class="t">StepResult</span>.Ok()));
+});</code></pre>
+      </div>
 
-<span class="c">// dotnet run -- run --scenario checkout</span></code></pre>
-    </div>
-    <div class="code">
-      <div class="bar"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i><span class="t mono">console</span></div>
-<pre class="mono term"><code><span class="rule">═══════════════════════════════════════════════</span>
+      <div class="lab">step 2<b>Configure the load</b></div>
+      <div class="block">
+        <div class="fn"><span>appsettings.json</span><span>JSON</span></div>
+<pre><code>{
+  <span class="s">"Pacer"</span>: {
+    <span class="s">"Scenarios"</span>: {
+      <span class="s">"checkout"</span>: {
+        <span class="s">"Profile"</span>: <span class="s">"ramp"</span>, <span class="s">"Users"</span>: <span class="n">200</span>,
+        <span class="s">"RampUp"</span>: <span class="s">"30s"</span>, <span class="s">"Hold"</span>: <span class="s">"1m"</span>, <span class="s">"RampDown"</span>: <span class="s">"30s"</span>
+      }
+    }
+  }
+}</code></pre>
+      </div>
+
+      <div class="lab">step 3<b>Run it</b></div>
+      <div class="block">
+        <div class="fn"><span>terminal</span><span></span></div>
+<pre class="term"><code><span class="h">$</span> dotnet run -- run --scenario checkout
+
+<span class="r">═══════════════════════════════════════════════════════════════════════════════</span>
  Scenario: checkout  [group: storefront]
  Profile:  Ramp  ·  200 peak users  ·  2m 00s
-<span class="rule">═══════════════════════════════════════════════</span>
- step          ok   fail    rps   p95 ms   p99 ms
-<span class="rule">───────────────────────────────────────────────</span>
- login     <span class="ok">12,418</span>     <span class="ok">0</span>  207.0    13.95    14.98
- browse    <span class="ok">12,390</span>     <span class="ok">0</span>  206.5    33.28    34.30
- purchase  <span class="ok">12,144</span>   <span class="fail">246</span>  206.4    43.52    44.54
-<span class="rule">───────────────────────────────────────────────</span>
- checkout  <span class="ok">12,144</span>   <span class="fail">246</span>  207.4    80.90    87.04
-<span class="rule">═══════════════════════════════════════════════</span></code></pre>
+<span class="r">═══════════════════════════════════════════════════════════════════════════════</span>
+ step          ok  fail    rps       in       out      mean       p95       p99
+<span class="r">───────────────────────────────────────────────────────────────────────────────</span>
+ login     <span class="ok">12,418</span>     0  207.0   4.2 MB    1.1 MB   2840 µs  13.95 ms  14.98 ms
+ browse    <span class="ok">12,390</span>     0  206.5   9.8 MB  904.0 KB  21.40 ms  33.28 ms  34.30 ms
+ purchase  <span class="ok">12,144</span>   <span class="bad">246</span>  206.4   3.1 MB    2.4 MB  30.12 ms  43.52 ms  44.54 ms
+<span class="r">───────────────────────────────────────────────────────────────────────────────</span>
+ checkout  <span class="ok">12,144</span>   <span class="bad">246</span>  207.4  17.1 MB    4.4 MB  54.36 ms  80.90 ms  87.04 ms
+<span class="r">═══════════════════════════════════════════════════════════════════════════════</span></code></pre>
+      </div>
     </div>
   </div>
 </section>
 
 <footer>
   <div class="wrap">
-    <p><strong>Pacer</strong> — Apache-2.0 licensed ·
-      <a href="https://www.nuget.org/packages/Pacer">NuGet</a> ·
-      <a href="https://github.com/WeekTwenty/Pacer">GitHub</a></p>
-    <p style="margin-top:6px;color:var(--dim)">An independent load-testing framework for the .NET ecosystem.</p>
+    <span>Pacer · Apache-2.0</span>
+    <span><a href="https://www.nuget.org/packages/Pacer">NuGet</a> · <a href="https://github.com/WeekTwenty/Pacer">GitHub</a></span>
   </div>
 </footer>
 
 <script>
   const b = document.getElementById('copyBtn');
   b.addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText(b.dataset.cmd); b.textContent = 'Copied!'; }
-    catch { b.textContent = 'Copy failed'; }
+    try { await navigator.clipboard.writeText(b.dataset.cmd); b.textContent = 'Copied'; }
+    catch { b.textContent = 'Failed'; }
     setTimeout(() => (b.textContent = 'Copy'), 1500);
   });
 </script>
